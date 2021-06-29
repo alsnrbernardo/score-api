@@ -7,7 +7,6 @@ module Domain =
 
   type FailState =
   | InvalidCpf
-  | InvalidCpfFormat
   | ScoreOutOfValidRange
   | UnableToScoreCpf
   | DatabaseError
@@ -54,9 +53,7 @@ module Domain =
   module ScoredCPF =
 
     let create (cpf : CPF) (value : int) : Outcome<ScoredCPF, FailState> =
-      if value > 0 && value <= 1000
-        then Success { cpf = cpf; value = (Score value) }
-        else Failure ScoreOutOfValidRange
+      Score.create value |> map (fun (score : Score) -> { cpf = cpf; value = score })
 
   module CpfScore =
 

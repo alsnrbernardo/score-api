@@ -11,7 +11,6 @@ let endpointPipe = pipeline {
 let app = application {
     pipe_through endpointPipe
 
-    // TODO error_handler (fun ex _ -> pipeline { render_html (InternalError.layout ex) })
     use_router Router.appRouter
     url "http://0.0.0.0:8085/"
     memory_cache
