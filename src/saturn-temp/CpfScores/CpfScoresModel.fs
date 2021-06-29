@@ -8,8 +8,7 @@ module Domain =
   type FailState =
   | InvalidCpf
   | ScoreOutOfValidRange
-  | UnableToScoreCpf
-  | DatabaseError
+  | DatabaseError of exn
 
   type CPF = private CPF of string
   

@@ -47,7 +47,7 @@ module Repository =
 
       match resultSet with
       | Ok seq -> return seq |> Seq.map ScoreInstanceEntity.toDomain |> Seq.fold ScoreInstanceEntity.normalize (Success [])
-      | Error _ -> return Failure DatabaseError
+      | Error e -> return Failure (DatabaseError e)
     }
 
   let insert connectionString (score : CpfScore) : Task<Outcome<CpfScore, FailState>> =
@@ -58,5 +58,5 @@ module Repository =
       
       match result with
       | Ok _ -> return Success score
-      | Error _ -> return Failure DatabaseError
+      | Error e -> return Failure (DatabaseError e)
     }

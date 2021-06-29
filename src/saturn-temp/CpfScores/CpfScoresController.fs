@@ -11,14 +11,24 @@ open Domain
 
 module Controller =
 
-  type ResponseBody = {
-    value: int
-    created_at: System.DateTime
-  }
+  module DTO =
 
-  type RequestBody = {
-    cpf : string
-  }
+    type ResponseBody = {
+      value: int
+      created_at: string
+    }
+
+    type RequestBody = {
+      cpf : string
+    }
+
+    let toDto (inst : ScoreInstance) : ResponseBody =
+      { value = Score.extract inst.value 
+        created_at = inst.created_at.ToString "dd/MM/yyyy HH:mm:ss" }
+  
+  type ErrorStatus =
+  | BadRequest of string
+  | ServerError of string 
 
   let private createCpfScore cpfInput : Outcome<CpfScore, FailState> =
     cpfInput
@@ -26,27 +36,34 @@ module Controller =
     >>= ScoringService.scoreCpf
     >>= CpfScore.create
 
-  let private toDto (inst : ScoreInstance) : ResponseBody =
-    { value = Score.extract inst.value 
-      created_at = inst.created_at }
-
   let private insert connStr outcome = TaskComp.elevate (Repository.insert connStr) outcome
 
   let private getAllScoresByCpf connStr outcome = TaskComp.elevate (Repository.getAllScoresByCpf connStr) outcome
 
-  let private responseMessage (failure : FailState) = "Error while creating CPF score"
+  let private failToErrorResponse (failure : FailState) = 
+    match failure with
+    | InvalidCpf -> BadRequest "The provided CPF is not valid."
+    | ScoreOutOfValidRange -> ServerError "Unable to process request, please contact the system administrator"
+    | DatabaseError _ -> ServerError "Internal error while processing the request."
+
+  let private handleErrorResponse ctx error =
+    task {
+      match error with
+      | BadRequest msg -> return! Response.badRequest ctx msg
+      | ServerError er -> return! Response.internalError ctx er
+    }
 
   let newCpfScore (ctx: HttpContext) : Task<HttpContext option> =
     task {
-      let! input = Controller.getModel<RequestBody> ctx
+      let! input = Controller.getModel<DTO.RequestBody> ctx
 
       let config = Controller.getConfig ctx
  
       let! result = (createCpfScore input.cpf) |> insert config.connectionString
 
       match result with
-      | Success _ -> return! Response.ok ctx "New CPF Score created"
-      | Failure failState -> return! Response.badRequest ctx (responseMessage failState)
+      | Success _ -> return! Response.ok ctx "New score for CPF registered!"
+      | Failure fail -> return! failToErrorResponse fail |> handleErrorResponse ctx
     }
 
   let listScoresByCpf (ctx : HttpContext) (cpf : string) =
@@ -56,8 +73,8 @@ module Controller =
       let! result = CPF.create cpf |> getAllScoresByCpf cnf.connectionString
 
       match result with
-      | Success scores -> return! scores |> List.map toDto |> Response.ok ctx
-      | Failure failState -> return! Response.badRequest ctx (responseMessage failState)
+      | Success scores -> return! scores |> List.map DTO.toDto |> Response.ok ctx
+      | Failure fail -> return! failToErrorResponse fail |> handleErrorResponse ctx
     }
 
   let resource = controller {
