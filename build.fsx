@@ -6,8 +6,8 @@ open Fake.DotNet
 open Fake.IO
 open System.Threading
 
-let appPath = "./src/saturn-temp/" |> Path.getFullName
-let projectPath = Path.combine appPath "saturn-temp.fsproj"
+let appPath = "./src/score-api/" |> Path.getFullName
+let projectPath = Path.combine appPath "score-api.fsproj"
 
 
 Target.create "Clean" ignore
