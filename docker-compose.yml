@@ -1,0 +1,33 @@
+version: '3.9'
+
+networks:
+  dev:
+    driver: bridge
+
+services:
+  db:
+    image: postgres
+    container_name: score-api-db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes: 
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - dev
+  
+  score-api:
+    image: score-api
+    container_name: score-api-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    depends_on:
+      - db
+    networks:
+      - dev
