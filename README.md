@@ -24,6 +24,22 @@ dotnet saturn migration
 dotnet fake build -t run
 ```
 
+### Testing
+
+To interact with the api, use a REST testing tool like [Postman](https://www.postman.com/downloads/).
+
+API endpoints:
+
+* `GET /score/<CPF>` fetches the values and creation dates of scores attributed to the given [CPF](https://theonegenerator.com/generators/documents/cpf-generator/).
+
+* `POST /score` scores and registers the provided CPF
+```
+// Request Body example 
+{
+    "cpf" : "605.226.796-84"
+}
+```
+
 ### Missing Features and Things to Improve
 
 * Encrypt sensitive data (e.g. CPF's are being stored as raw text)
